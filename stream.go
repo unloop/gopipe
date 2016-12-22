@@ -9,12 +9,14 @@ type Stream struct {
 	buffer int       // Buffer size
 	w      io.Writer // Underlying writer to send data to
 	c      int       // Number of bytes written since last call to Count()
+	done   chan bool // Done pipe
 }
 
 func New(w io.Writer) *Stream {
 	s := new(Stream)
 	s.w = w
 	s.buffer = 1024
+	s.done = make(chan bool, 1)
 	return s
 }
 
@@ -42,19 +44,33 @@ func (s *Stream) Write(p []byte) (n int, err error) {
 // Pipe io.ReadCloser to io.Writer
 func (s *Stream) Pipe(reader *io.ReadCloser) {
 
-	var buffer = make([]byte, s.buffer)
+	var (
+		buffer = make([]byte, s.buffer)
+	)
 
 	for {
-		n, err := (*reader).Read(buffer)
-		if err != nil {
+		select {
+		case <-s.done:
 			(*reader).Close()
-			break
-		}
+			return
+		default:
+			n, err := (*reader).Read(buffer)
+			if err != nil {
+				(*reader).Close()
+				break
+			}
 
-		s.Write(buffer[0:n])
+			s.Write(buffer[0:n])
 
-		for i := 0; i < n; i++ {
-			buffer[i] = 0
+			for i := 0; i < n; i++ {
+				buffer[i] = 0
+			}
 		}
 	}
+}
+
+// Close pipe streaming
+func (s *Stream) Close() {
+	s.done <- true
+	return
 }
