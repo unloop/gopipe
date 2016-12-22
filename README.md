@@ -34,13 +34,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
   
   go s.Pipe(&readCloser)
 
-	notify := w.(http.CloseNotifier).CloseNotify()
+  notify := w.(http.CloseNotifier).CloseNotify()
 
-	go func() {
-		<-notify
-		fmt.Println("HTTP connection just closed.")
-		s.Close()
-	}()
+  go func() {
+	<-notify
+	fmt.Println("HTTP connection just closed.")
+	s.Close()
+  }()
 
   return
 }
