@@ -18,6 +18,7 @@ import (
   "github.com/unloop/gopipe"
   "net/http"
   "io"
+  "fmt"
 )
 
 
@@ -29,9 +30,17 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
   defer readCloser.Close()
 	
-  /* do something */
+  s := stream.New(w).SetBuffer(2048)
+  
+  go s.Pipe(&readCloser)
 
-  stream.New(w).SetBuffer(2048).Pipe(&readCloser)
+	notify := w.(http.CloseNotifier).CloseNotify()
+
+	go func() {
+		<-notify
+		fmt.Println("HTTP connection just closed.")
+		s.Close()
+	}()
 
   return
 }
@@ -70,8 +79,6 @@ func main() {
 
   defer readCloser.Close()
 	
-  /* do something */
-
   stream.New(Writer{}).Pipe(&readCloser)
 
   return
