@@ -7,7 +7,7 @@ Golang pipe http response
  
 The import path for the package is github.com/unloop/gopipe.
   
-To install it, run: `go get unloop/gopipe`
+To install it, run: `go get github.com/unloop/gopipe`
   
 ## Example
   
